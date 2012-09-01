@@ -27,6 +27,7 @@ import org.hbase.async.HBaseClient;
 import net.opentsdb.BuildData;
 import net.opentsdb.core.TSDB;
 import net.opentsdb.tsd.PipelineFactory;
+import net.opentsdb.tsd.TSDBThriftServer;
 
 /**
  * Main class of the TSD, the Time Series Daemon.
@@ -127,6 +128,11 @@ final class TSDMain {
       client.setFlushInterval(flush_interval);
       final TSDB tsdb = new TSDB(client, table, uidtable);
       registerShutdownHook(tsdb);
+
+      log.info("Starting thrift.");
+      TSDBThriftServer tserver = new TSDBThriftServer(tsdb);
+      tserver.Start();
+
       final ServerBootstrap server = new ServerBootstrap(factory);
 
       server.setPipelineFactory(new PipelineFactory(tsdb));

@@ -71,10 +71,15 @@ tsdb_SRC := \
 	src/tsd/StaticFileRpc.java	\
 	src/tsd/TelnetRpc.java	\
 	src/tsd/WordSplitter.java	\
+	src/tsd/Metric.java	\
+	src/tsd/TSDBService.java	\
+	src/tsd/TSDBThriftServer.java	\
 	src/uid/NoSuchUniqueId.java	\
 	src/uid/NoSuchUniqueName.java	\
 	src/uid/UniqueId.java	\
 	src/uid/UniqueIdInterface.java
+
+THRIFT:= third_party/thrift/libthrift-0.8.0.jar
 
 tsdb_DEPS = \
 	$(ASYNCHBASE)	\
@@ -86,6 +91,7 @@ tsdb_DEPS = \
 	$(NETTY)	\
 	$(SLF4J_API)	\
 	$(SUASYNC)	\
+	$(THRIFT)	\
 	$(ZOOKEEPER)
 
 # Install all the .jar files in pkgdatadir.
