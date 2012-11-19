@@ -11,6 +11,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.stumbleupon.async.Callback;
+import com.stumbleupon.async.Deferred;
 
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -31,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.opentsdb.core.TSDB;
+import net.opentsdb.stats.StatsCollector;
 
 /**
  * ThriftServer - this class starts up a Thrift server which implements the
@@ -42,8 +47,23 @@ public class TSDBThriftServer {
     this.tsdb = tsdb;
   }
 
+  /**
+   * Collects the stats and metrics tracked by this instance.
+   * @param collector The collector to use.
+   */
+  public static void collectStats(final StatsCollector collector) {
+    collector.record("thrift.hbase.errors", hbase_errors, "type=hbase_errors");
+    collector.record("thrift.puts.requests", puts_requests, "type=puts_requests");
+    collector.record("thrift.puts.errors", puts_errors, "type=puts_errors");
+    collector.record("thrift.puts.metrics", puts_metrics, "type=puts_metrics");
+  }
+
   private final TSDB tsdb;
   private static final Logger LOG = LoggerFactory.getLogger(TSDBThriftServer.class);
+  private static final AtomicLong hbase_errors = new AtomicLong();
+  private static final AtomicLong puts_requests = new AtomicLong();
+  private static final AtomicLong puts_errors = new AtomicLong();
+  private static final AtomicLong puts_metrics = new AtomicLong();
   /**
    * The HBaseHandler is a glue object that connects Thrift RPC calls to the
    * HBase client API primarily defined in the HBaseAdmin and HTable objects.
@@ -58,14 +78,29 @@ public class TSDBThriftServer {
     public boolean Put(List<Metric> metrics)
                        throws org.apache.thrift.TException {
       try {
+        final class PutErrback implements Callback<Exception, Exception> {
+          public Exception call(final Exception arg) {
+            LOG.info("put: HBase error: " + arg.getMessage() + '\n');
+            hbase_errors.incrementAndGet();
+            return arg;
+          }
+          public String toString() {
+            return "handle error thirft puts.";
+          }
+        }
+
         LOG.info("Put..." + metrics.size());
+        puts_requests.getAndAdd(metrics.size());
+        puts_metrics.incrementAndGet();
         for (final Metric m : metrics) {
-          tsdb.addPoint(m.metric, m.timestamp, (float)(m.value), m.tags);
+          Deferred<Object> deferred = tsdb.addPoint(m.metric, m.timestamp, (float)(m.value), m.tags);
+          deferred.addErrback(new PutErrback());
         }
         LOG.info("Put success.");
         return true;
       } catch (Exception e) {
         LOG.error("Put faild.", e);
+        puts_errors.incrementAndGet();
         return false;
       }
     }

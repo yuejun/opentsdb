@@ -224,6 +224,7 @@ final class RpcHandler extends SimpleChannelUpstreamHandler {
     HttpQuery.collectStats(collector);
     GraphHandler.collectStats(collector);
     PutDataPointRpc.collectStats(collector);
+    TSDBThriftServer.collectStats(collector);
   }
 
   // ---------------------------- //

@@ -193,6 +193,8 @@ public final class UniqueId implements UniqueIdInterface {
       if (id.length != idWidth) {
         throw new IllegalStateException("Found id.length = " + id.length
                                         + " which is != " + idWidth
+                                        + " which name= " + name
+                                        + " which id= " + id
                                         + " required for '" + kind() + '\'');
       }
       addIdToCache(name, id);
