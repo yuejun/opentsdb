@@ -596,10 +596,14 @@ final class CompactionQueue extends ConcurrentSkipListMap<byte[], Boolean> {
         }
         if (cell.qualifier[1] != prev.qualifier[1]
             || !Bytes.equals(cell.value, prev.value)) {
+            /*
           throw new IllegalDataException("Found out of order or duplicate"
             + " data: cell=" + cell + ", delta=" + delta + ", prev cell="
             + prev + ", last_delta=" + last_delta + ", in row=" + row
             + " -- run an fsck.");
+            ----
+            @yuankui, just skip duplicated cell.
+            */
         }
         // else: we're good, this is a true duplicate (same qualifier & value).
         // Just replace it with a tombstone so we'll skip it.  We don't delete
