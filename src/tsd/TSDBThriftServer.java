@@ -76,33 +76,33 @@ public class TSDBThriftServer {
 
     @Override
     public boolean Put(List<Metric> metrics)
-                       throws org.apache.thrift.TException {
-      try {
-        final class PutErrback implements Callback<Exception, Exception> {
-          public Exception call(final Exception arg) {
+        throws org.apache.thrift.TException {
+
+    final class PutErrback implements Callback<Exception, Exception> {
+        public Exception call(final Exception arg) {
             LOG.info("put: HBase error: " + arg.getMessage() + '\n');
             hbase_errors.incrementAndGet();
             return arg;
-          }
-          public String toString() {
+        }
+        public String toString() {
             return "handle error thirft puts.";
-          }
         }
+    }
 
-        LOG.info("Put..." + metrics.size());
-        puts_requests.getAndAdd(metrics.size());
-        puts_metrics.incrementAndGet();
-        for (final Metric m : metrics) {
-          Deferred<Object> deferred = tsdb.addPoint(m.metric, m.timestamp, (float)(m.value), m.tags);
-          deferred.addErrback(new PutErrback());
+    LOG.info("Put..." + metrics.size());
+    puts_requests.getAndAdd(metrics.size());
+    puts_metrics.incrementAndGet();
+
+    for (final Metric m : metrics) {
+        try {
+            Deferred<Object> deferred = tsdb.addPoint(m.metric, m.timestamp, (float)(m.value), m.tags);
+            deferred.addErrback(new PutErrback());
+        } catch (Exception e) {
+            LOG.error("Put faild.", e);
+            puts_errors.incrementAndGet();
         }
-        LOG.info("Put success.");
-        return true;
-      } catch (Exception e) {
-        LOG.error("Put faild.", e);
-        puts_errors.incrementAndGet();
-        return false;
-      }
+    }
+    return true;
     }
   }
 
