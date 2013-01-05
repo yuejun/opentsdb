@@ -35,6 +35,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+import org.hbase.async.KeyValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,6 +126,76 @@ final class GraphHandler implements HttpRpc {
     }
   }
 
+  public Spans doThriftGet(final TSDB tsdb, QueryStr querystr) 
+  	throws IOException {
+  	
+  	Spans spans = new Spans();
+  	
+    final long start_time = querystr.starttime;
+    final boolean nocache = querystr.nocache;
+    if (start_time == -1) {
+      throw BadRequestException.missingParameter("start");
+    }
+    long end_time = querystr.endtime;
+    final long now = System.currentTimeMillis() / 1000;
+    if (end_time == -1) {
+      end_time = now;
+    }
+    Query[] tsdbqueries;
+    tsdbqueries = parseThriftQuery(tsdb, querystr.items);
+
+    final int nqueries = tsdbqueries.length;
+    @SuppressWarnings("unchecked")
+    final HashSet<String>[] aggregated_tags = new HashSet[nqueries];
+    int npoints = 0;
+    for (int i = 0; i < nqueries; i++) {
+      try { 
+      	Span span = new Span();
+        final DataPoints[] series = tsdbqueries[i].run();
+      	span.metric = series[0].metricName();
+        span.tags = series[0].getTags();
+        for (final DataPoints datapoints : series) {
+
+          aggregated_tags[i] = new HashSet<String>();
+          aggregated_tags[i].addAll(datapoints.getAggregatedTags());
+          npoints += datapoints.aggregatedSize();
+          int j = datapoints.size();
+          Map<Long, Double> timevalue = new HashMap<Long, Double>();
+          
+          for(DataPoint dp : datapoints) {
+          	if (dp.isInteger()) {
+          		timevalue.put(dp.timestamp(), (double)dp.longValue());
+            } else {
+            	timevalue.put(dp.timestamp(), dp.doubleValue());
+              }
+          }
+          
+          
+          
+          List<Map<Long, Double>> timevalues = new ArrayList<Map<Long,Double>>();
+          timevalues.add(timevalue);
+          span.timevalue = timevalues;
+          System.out.println(spans);
+          spans.addToSpan(span);
+          
+          System.out.println(spans);
+        }
+      } catch (RuntimeException e) {
+        LOG.info(querystr.toString(), "Query failed (stack trace coming): "
+                + tsdbqueries[i]);
+        throw e;
+      }
+      tsdbqueries[i] = null;  // free()
+    }
+    tsdbqueries = null;  // free()
+    return spans;
+  }
+  
+  
+  
+  
+  
+  
   private void doGraph(final TSDB tsdb, final HttpQuery query)
     throws IOException {
     final String basepath = getGnuplotBasePath(query);
@@ -179,7 +250,10 @@ final class GraphHandler implements HttpRpc {
       try {  // execute the TSDB query!
         // XXX This is slow and will block Netty.  TODO(tsuna): Don't block.
         // TODO(tsuna): Optimization: run each query in parallel.
+      	
+      	
         final DataPoints[] series = tsdbqueries[i].run();
+        
         for (final DataPoints datapoints : series) {
           plot.add(datapoints, options.get(i));
           aggregated_tags[i] = new HashSet<String>();
@@ -875,6 +949,49 @@ final class GraphHandler implements HttpRpc {
     return tsdbqueries;
   }
 
+  private static Query[] parseThriftQuery(final TSDB tsdb, final List<Items> items) {
+  	if (items == null) {
+      throw BadRequestException.missingParameter("items");
+    }
+    final Query[] tsdbqueries = new Query[items.size()];
+    int nqueries = 0;
+    for (final Items item : items) {
+      // m is of the following forms:
+      //   agg:[interval-agg:][rate:]metric[{tag=value,...}]
+      // Where the parts in square brackets `[' .. `]' are optional.
+
+    	final String metric = item.metric;
+    	
+    	final Map<String, String> tags= item.tags;
+    	final Map<Integer, String> aggMap = new HashMap<Integer, String>();
+    	aggMap.put(0, "sum");
+    	aggMap.put(1, "min");
+    	aggMap.put(2, "max");
+    	aggMap.put(3, "avg");
+    	aggMap.put(4, "dev");
+    	Aggregator agg = Aggregators.get(aggMap.get((int)item.aggregator));
+      Aggregator downsampler = Aggregators.get(aggMap.get((int)item.downsample_agg));
+      final String downsample = item.downsample_time;
+      final boolean rate = item.rate;
+      final Query tsdbquery = tsdb.newQuery();
+      try {
+        tsdbquery.setTimeSeries(metric, tags, agg, rate);
+      } catch (NoSuchUniqueName e) {
+        throw new BadRequestException(e.getMessage());
+      }
+      // downsampling function & interval.
+      
+      final int interval = parseDuration(downsample);
+      tsdbquery.downsample(interval, downsampler);      
+      tsdbqueries[nqueries++] = tsdbquery;
+    }
+    return tsdbqueries;
+  }
+  
+
+  
+  
+  
   /**
    * Returns the aggregator with the given name.
    * @param name Name of the aggregator to get.

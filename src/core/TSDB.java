@@ -17,6 +17,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import java_cup.internal_error;
+
+import com.google.gwt.i18n.client.LocalizableResource.Key;
 import com.stumbleupon.async.Callback;
 import com.stumbleupon.async.Deferred;
 import com.stumbleupon.async.DeferredGroupException;
@@ -30,12 +33,17 @@ import org.hbase.async.DeleteRequest;
 import org.hbase.async.GetRequest;
 import org.hbase.async.HBaseClient;
 import org.hbase.async.HBaseException;
+import org.hbase.async.HBaseRpc;
 import org.hbase.async.KeyValue;
+import org.hbase.async.NonRecoverableException;
+import org.hbase.async.NotServingRegionException;
 import org.hbase.async.PutRequest;
 
 import net.opentsdb.uid.UniqueId;
 import net.opentsdb.stats.Histogram;
 import net.opentsdb.stats.StatsCollector;
+
+import redis.clients.jedis.*;
 
 /**
  * Thread-safe implementation of the TSDB client.
@@ -62,7 +70,8 @@ public final class TSDB {
 
   /** Client for the HBase cluster to use.  */
   final HBaseClient client;
-
+  final Jedis jedis = new Jedis("127.0.0.1", 6379);
+  
   /** Name of the table in which timeseries are stored.  */
   final byte[] table;
 
@@ -237,6 +246,9 @@ public final class TSDB {
                                    final long value,
                                    final Map<String, String> tags) {
     final short flags = 0x7;  // An int stored on 8 bytes.
+    
+    //final Exception e = new Exception("te");
+    //return Deferred.fromError(e);
     return addPointInternal(metric, timestamp, Bytes.fromLong(value),
                             tags, flags);
   }
@@ -266,12 +278,18 @@ public final class TSDB {
                                    final long timestamp,
                                    final float value,
                                    final Map<String, String> tags) {
+  	
     if (Float.isNaN(value) || Float.isInfinite(value)) {
       throw new IllegalArgumentException("value is NaN or Infinite: " + value
                                          + " for metric=" + metric
                                          + " timestamp=" + timestamp);
     }
     final short flags = Const.FLAG_FLOAT | 0x3;  // A float stored on 4 bytes.
+    
+    
+    //final Exception e = new Exception("te");
+    //return Deferred.fromError(e);
+    
     return addPointInternal(metric, timestamp,
                             Bytes.fromInt(Float.floatToRawIntBits(value)),
                             tags, flags);
@@ -301,10 +319,34 @@ public final class TSDB {
                                             Bytes.fromShort(qualifier), value);
     // TODO(tsuna): Add a callback to time the latency of HBase and store the
     // timing in a moving Histogram (once we have a class for this).
-    return client.put(point);
+    System.out.println(sendToRedis(row, timestamp, value, qualifier));    
+    return client.put(point);    
+  }  
+
+  Deferred<Object> sendToRedis(byte[] row, long timestamp, byte[] value, short qualifier) {
+  	byte[] qu = new byte[2];
+  	qu = Bytes.fromShort(qualifier);
+	  byte[] _sort_name = new byte[3];
+	  byte[] tags = new byte[row.length-7];
+	  System.arraycopy(row, 0,_sort_name, 0, 3);
+	  System.arraycopy(row, 7,tags, 0, row.length-7);
+	  double _score = timestamp;
+	  byte[] _value = new byte[value.length + tags.length + qu.length];
+	  System.arraycopy(qu, 0, _value, 0, qu.length);
+	  System.arraycopy(value, 0, _value, qu.length, value.length);
+	  System.arraycopy(tags, 0, _value, qu.length + value.length, tags.length);
+	  // _sort_name contains only metric(4 bytes)
+	  // _score     contains only timestamp(10 bytes)
+	  // _value 		contains qu(2 bytes) value(4 bytes for float and 8 bytes for int) 
+	  //						and tags(each tag* 3bytes)
+	  jedis.zadd(_sort_name, _score, _value);
+	  
+	  System.out.println("_value " + Arrays.toString(_value));
+	  System.out.println("sort_name " + Arrays.toString(_sort_name));
+	  return null;
   }
 
-  /**
+	/**
    * Forces a flush of any un-committed in memory data.
    * <p>
    * For instance, any data point not persisted will be sent to HBase.
@@ -431,7 +473,11 @@ public final class TSDB {
 
   /** Gets the entire given row from the data table. */
   final Deferred<ArrayList<KeyValue>> get(final byte[] key) {
-    return client.get(new GetRequest(table, key));
+    Deferred<ArrayList<KeyValue>> mu;
+    System.out.println("key is " + key);    
+    mu=  client.get(new GetRequest(table, key));
+    System.out.println("agjfhgasdjfghasd" + mu.toString());
+    return mu;
   }
 
   /** Puts the given value into the data table. */

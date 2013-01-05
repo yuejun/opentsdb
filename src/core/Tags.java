@@ -283,19 +283,20 @@ public final class Tags {
     if (s == null) {
       throw new IllegalArgumentException("Invalid " + what + ": null");
     }
-    final int n = s.length();
-    for (int i = 0; i < n; i++) {
-      final char c = s.charAt(i);
-      if (!(('a' <= c && c <= 'z')
-            || ('A' <= c && c <= 'Z')
-            || ('0' <= c && c <= '9')
-            || c == '-' || c == '_' || c == '.' || c == '/')) {
-        throw new IllegalArgumentException("Invalid " + what
-            + " (\"" + s + "\"): illegal character: " + c);
-      }
-    }
+  /**
+  *  final int n = s.length();
+  *  for (int i = 0; i < n; i++) {
+  *    final char c = s.charAt(i);
+  *    if (!(('a' <= c && c <= 'z')
+  *          || ('A' <= c && c <= 'Z')
+  *          || ('0' <= c && c <= '9')
+  *          || c == '-' || c == '_' || c == '.' || c == '/')) {
+  *      throw new IllegalArgumentException("Invalid " + what
+  *          + " (\"" + s + "\"): illegal character: " + c);
+  *    }
+  *  }
+  */
   }
-
   /**
    * Resolves all the tags (name=value) into the a sorted byte arrays.
    * This function is the opposite of {@link #resolveIds}.

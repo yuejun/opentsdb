@@ -20,6 +20,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,10 @@ import org.hbase.async.Bytes;
 import org.hbase.async.HBaseException;
 import org.hbase.async.KeyValue;
 import org.hbase.async.Scanner;
+
+
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Tuple;
 import static org.hbase.async.Bytes.ByteMap;
 
 import net.opentsdb.stats.Histogram;
@@ -38,6 +43,8 @@ import net.opentsdb.uid.NoSuchUniqueName;
  * Non-synchronized implementation of {@link Query}.
  */
 final class TsdbQuery implements Query {
+	
+	private Jedis jedis = new Jedis("127.0.0.1", 6379);
 
   private static final Logger LOG = LoggerFactory.getLogger(TsdbQuery.class);
 
@@ -50,6 +57,7 @@ final class TsdbQuery implements Query {
    * 100 ms after we which we switch to exponential buckets.
    */
   static final Histogram scanlatency = new Histogram(16000, (short) 2, 100);
+  static final Histogram RedisScanlatency = new Histogram(16000, (short) 2, 100);
 
   /**
    * Charset to use with our server-side row-filter.
@@ -223,7 +231,9 @@ final class TsdbQuery implements Query {
   }
 
   public DataPoints[] run() throws HBaseException {
-    return groupByAndAggregate(findSpans());
+    DataPoints[] dt =  groupByAndAggregate(findSpans());
+    System.out.println("danteng is " + dt);
+    return dt;
   }
 
   /**
@@ -244,37 +254,191 @@ final class TsdbQuery implements Query {
     int nrows = 0;
     int hbase_time = 0;  // milliseconds.
     long starttime = System.nanoTime();
-    final Scanner scanner = getScanner();
-    try {
-      ArrayList<ArrayList<KeyValue>> rows;
-      while ((rows = scanner.nextRows().joinUninterruptibly()) != null) {
-        hbase_time += (System.nanoTime() - starttime) / 1000000;
-        for (final ArrayList<KeyValue> row : rows) {
-          final byte[] key = row.get(0).key();
-          if (Bytes.memcmp(metric, key, 0, metric_width) != 0) {
-            throw new IllegalDataException("HBase returned a row that doesn't match"
-                + " our scanner (" + scanner + ")! " + row + " does not start"
-                + " with " + Arrays.toString(metric));
+    if(System.currentTimeMillis()/1000 - start_time >= 60*60) {
+	    for (Tuple item : jedis.zrangeByScoreWithScores(metric, start_time, end_time)) {	    	
+	    	try {
+	    		hbase_time += (System.nanoTime() - starttime) / 1000000;
+	        final long time = (long)item.getScore();
+	        final long base_time = (time - (time % Const.MAX_TIMESPAN));
+	        // redis_value is the value of score(time) in metric, contains qu(2 bytes),
+	        // real value (8 bytes for int, 4 bytes for float and tags(left bytes),
+	        // tags are number multiple of 3.
+	        byte[] redis_value = item.getBinaryElement();
+	        int valLen = 0;
+	        // judge value is float or int
+	        if(redis_value.length % 3 == 1) {
+	        	valLen = 8;
+	        } else if (redis_value.length % 3 == 0) {
+	        	valLen = 4;
+	        } else {
+	        	LOG.error("data read from redis error!");
+	        	return null;
+	        }
+	        
+	        // got qu
+	        byte[] qu = new byte[2];
+	        System.arraycopy(redis_value, 0, qu, 0, 2);	    	
+	        // got value
+	        byte[] value = new byte[valLen];
+	        System.arraycopy(redis_value, qu.length, value, 0, valLen);	    	
+	        
+	         // judge if the tags are match
+	        
+	        boolean result = true;
+	        
+		       
+	        final short name_width = tsdb.tag_names.width();
+	        final short value_width = tsdb.tag_values.width();
+	        final short tagsize = (short) (name_width + value_width);
+	        byte[] _tags = new byte[redis_value.length - valLen - qu.length];
+	        System.arraycopy(redis_value, valLen + qu.length, _tags, 0, redis_value.length - valLen - qu.length);
+
+          System.out.println("redis_value" + Arrays.toString(redis_value));	      
+          System.out.println("_tags " + Arrays.toString(_tags));	  
+	        if (tags.size() != 0) {
+	          // Generate a regexp for our tags.  Say we have 2 tags: { 0 0 1 0 0 2 }
+	          // and { 4 5 6 9 8 7 }, the regexp will be:
+	          // "^.{7}(?:.{6})*\\Q\000\000\001\000\000\002\\E(?:.{6})*\\Q\004\005\006\011\010\007\\E(?:.{6})*$"
+	          final StringBuilder buf = new StringBuilder(( 2 + 22// "(?:.{M})*\\Q" + tagsize bytes + "\\E"
+	              * tags.size()));
+	          // In order to avoid re-allocations, reserve a bit more w/ groups ^^^
+	          // Allright, let's build this regexp.  From the beginning...
+	          System.out.println(tags);
+	          final Iterator<byte[]> tags = this.tags.iterator();
+	          byte[] tag = tags.hasNext() ? tags.next() : null;	          
+	          String t = Arrays.toString(tag);
+	          buf.append("^");
+	          System.out.println("t is " + t);
+	          while (tag != null) {
+	            // Tags and group_bys are already sorted.  We need to put them in the
+	            // regexp in order by ID, which means we just merge two sorted lists.
+	            // Skip any number of tags.
+	            buf.append("(?:(.*, ){6})*");
+	            String ta = Arrays.toString(tag);
+	            buf.append(ta.substring(1, ta.length() - 1) + ", ");
+	            tag = tags.hasNext() ? tags.next() : null;
+	            
+            }
+	          buf.append("(?:(.*, ){6})*");
+	          buf.append("$");
+	          System.out.println("----buf is "+buf.toString());
+	          Pattern pattern = Pattern.compile(buf.toString());
+	          String ______tags = Arrays.toString(_tags);
+	          StringBuilder ___tags = new StringBuilder(______tags.substring(1, ______tags.length()-1));
+	          ___tags.append(", ");
+	          System.out.println("----1111"+___tags);
+            result = pattern.matcher(___tags).matches();
+            System.out.println("result is "+result);
           }
-          Span datapoints = spans.get(key);
-          if (datapoints == null) {
-            datapoints = new Span(tsdb);
-            spans.put(key, datapoints);
+					
+	        
+	        
+	        /*// got tags
+	        
+	        
+	        int num = 0;
+	        for (int j = 0; j < tags.size(); j++) {
+						byte[] toBeMatched = tags.get(j);
+						byte[] _tags = new byte[tsdb.tag_names.width() + tsdb.tag_values.width()];
+						for (int i = 0; i < (redis_value.length - valLen - qu.length)/6; i++) {
+							System.arraycopy(redis_value, valLen + qu.length + 6 * i, _tags, _tags.length,
+									_tags.length);
+							if(_tags.equals(toBeMatched)) {
+								num ++;
+								break;
+							}
+							
+							
+						}
+					}*/
+	        
+	        
+	        
+					if (result) {		        
+		        
+	          byte[] key1 = new byte[metric_width + 4 + redis_value.length
+	              - valLen - qu.length];
+	          System.out.println(redis_value.length);
+	          System.arraycopy(metric, 0, key1, 0, metric_width);
+	          Bytes.setInt(key1, (int) base_time, 3);
+	          System.arraycopy(redis_value, qu.length + valLen, key1,
+	              metric_width + 4, redis_value.length - valLen - qu.length);
+	          System.out.println(redis_value.length - valLen - qu.length);
+	          Span datapoints = new Span(tsdb);
+	          byte[] fa = new byte[1];
+	          fa = "t".getBytes();
+	          KeyValue row = new KeyValue(key1, fa, qu, value);
+	          ArrayList<KeyValue> rows = new ArrayList<KeyValue>();
+	          rows.add(row);
+	          datapoints.addRow(tsdb.compact(rows));
+	          spans.put(key1, datapoints);
+	          nrows++;
+	          starttime = System.nanoTime();
+	          System.out.println("after, data is " + spans);
           }
-          datapoints.addRow(tsdb.compact(row));
-          nrows++;
-          starttime = System.nanoTime();
-        }
-      }
-    } catch (RuntimeException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new RuntimeException("Should never be here", e);
-    } finally {
-      hbase_time += (System.nanoTime() - starttime) / 1000000;
-      scanlatency.add(hbase_time);
+        } catch (RuntimeException e) {
+  		    throw e;
+  	    } catch (Exception e) {
+  		    throw new RuntimeException("Should never be here", e);
+  	    } finally {
+  		    hbase_time += (System.nanoTime() - starttime) / 1000000;
+  		    RedisScanlatency.add(hbase_time);
+  	    }
+	    }
+    } else {
+    	final Scanner scanner = getScanner();
+	    try {
+		    ArrayList<ArrayList<KeyValue>> rows;
+		    while ((rows = scanner.nextRows().joinUninterruptibly()) != null) {
+			    hbase_time += (System.nanoTime() - starttime) / 1000000;
+			    for (final ArrayList<KeyValue> row : rows) {
+				    final byte[] key = row.get(0).key();
+				    if (Bytes.memcmp(metric, key, 0, metric_width) != 0) {
+					    throw new IllegalDataException(
+					        "HBase returned a row that doesn't match" + " our scanner ("
+					            + scanner + ")! " + row + " does not start" + " with "
+					            + Arrays.toString(metric));
+				    }
+				    Span datapoints = spans.get(key);
+				    if (datapoints == null) {
+					    datapoints = new Span(tsdb);
+					    spans.put(key, datapoints);
+
+			    		System.out.println("null, data is " + datapoints);
+				    }
+				    
+				    System.out.println("null, data is " + datapoints);
+				    KeyValue da = tsdb.compact(row);
+				    
+				    System.out.println("da is " + da);
+				    System.out.println("da.fa len  is " + da.family().length);
+				    System.out.println("da.qu len  is " + da.qualifier().length);
+				    System.out.println("da.va len  is " + da.value().length);
+				    System.out.println("da.ke len  is " + da.key().length);
+				    System.out.println("da.fa  is " + Arrays.toString(da.family()));
+				    System.out.println("da.qu   is " + Bytes.getShort(da.qualifier()));
+
+				    System.out.println("da.qu   is " + Arrays.toString(da.qualifier()));
+				    System.out.println("da.va  is " + Arrays.toString(da.value()));
+				    System.out.println("da.ke  is " + Arrays.toString(da.key()));
+				    datapoints.addRow(da);
+
+		    		System.out.println("after, spans is " + spans);
+		    		
+				    nrows++;
+				    starttime = System.nanoTime();
+			    }
+		    }
+	    } catch (RuntimeException e) {
+		    throw e;
+	    } catch (Exception e) {
+		    throw new RuntimeException("Should never be here", e);
+	    } finally {
+		    hbase_time += (System.nanoTime() - starttime) / 1000000;
+		    scanlatency.add(hbase_time);
+	    }
     }
-    LOG.info(this + " matched " + nrows + " rows in " + spans.size() + " spans");
+		LOG.info(this + " matched " + nrows + " rows in " + spans.size() + " spans");
     if (nrows == 0) {
       return null;
     }
@@ -441,6 +605,7 @@ final class TsdbQuery implements Query {
         15  // "^.{N}" + "(?:.{M})*" + "$"
         + ((13 + tagsize) // "(?:.{M})*\\Q" + tagsize bytes + "\\E"
            * (tags.size() + (group_bys == null ? 0 : group_bys.size() * 3))));
+    System.out.println(buf);
     // In order to avoid re-allocations, reserve a bit more w/ groups ^^^
 
     // Alright, let's build this regexp.  From the beginning...

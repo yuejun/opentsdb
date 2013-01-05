@@ -18,10 +18,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import java_cup.internal_error;
+
 import com.stumbleupon.async.Deferred;
 
+import org.hamcrest.core.Is;
 import org.hbase.async.Bytes;
 import org.hbase.async.PutRequest;
+
+import redis.clients.jedis.Jedis;
 
 import net.opentsdb.stats.Histogram;
 
@@ -113,7 +118,11 @@ final class IncomingDataPoints implements WritableDataPoints {
     final short tag_name_width = tsdb.tag_names.width();
     final short tag_value_width = tsdb.tag_values.width();
     final short num_tags = (short) tags.size();
-
+    System.out.println("metric = " + metric_width);
+    System.out.println("tag_name = " + tag_name_width);
+    System.out.println("tag_value = " + tag_value_width);
+    System.out.println("num_tags= " + num_tags);
+    
     int row_size = (metric_width + Const.TIMESTAMP_BYTES
                     + tag_name_width * num_tags
                     + tag_value_width * num_tags);
@@ -133,6 +142,7 @@ final class IncomingDataPoints implements WritableDataPoints {
     }
     return row;
   }
+  
 
   public void setSeries(final String metric, final Map<String, String> tags) {
     checkMetricAndTags(metric, tags);

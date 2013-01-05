@@ -18,7 +18,48 @@ struct Metric {
     3: map<string, string>  tags
     4: double   value
 }
- 
+
+/*
+
+aggregator & downsample_agg:
+  0: sum, 1: min, 2: max, 3: avg, 4: dev
+rate:
+  0: note rate, 1: rate
+nocache:
+  0: cache, 1: nocache
+  
+*/
+
+
+struct Items {
+    1: string metric
+    4: map<string, string> tags
+    5: byte aggregator
+    6: byte downsample_agg
+    7: string downsample_time
+    8: bool rate
+} 
+
+
+struct QueryStr {
+    1: i64 starttime
+    2: i64 endtime
+    3: list<Items> items
+    4: bool nocache
+} 
+
+struct Span {
+    1: string metric
+    2: map<string, string> tags
+    3: list<map<i64, double>> timevalue
+}
+
+struct Spans {
+    1: list<Span> span
+}
+
+
+
 service TSDBService {
     /**
      * Put metrics to tsdb.
@@ -26,5 +67,21 @@ service TSDBService {
      * @return success or not
      */
     bool Put(1: list<Metric> metrics)
+    
+     /**
+     * Get list<spans> from tsdb
+     * One query may contains same time but multi metrics & it's own tags etc.
+     * Say we have a query like below
+     * 
+     *  starttime-endtime,< m1|<tgk1:tgv1,tgk2:tgv2>, m2|<tgk3:tgv3> >
+     * 
+     * we return like below
+     * < < (m1, <tgk1:tgv1,tgk2:tgv2>, <t1:v1, t2:v2>...), (m2, <tgk3:tgv3>, <t1:v1, t3:v3>...) >, >
+     * list<Spans> contains 1 Spans, each Spans contains 2 Span, each Span contains one metric
+     * and it's own time & value
+     * 
+     * 
+     */
+    list<Spans> Get(1: QueryStr querystr)
 }
 
