@@ -80,6 +80,7 @@ tsdb_SRC := \
 	src/uid/UniqueIdInterface.java
 
 THRIFT:= third_party/thrift/libthrift-0.8.0.jar
+JEDIS:= third_party/jedis/jedis-2.1.0.jar
 
 tsdb_DEPS = \
 	$(ASYNCHBASE)	\
@@ -92,6 +93,7 @@ tsdb_DEPS = \
 	$(SLF4J_API)	\
 	$(SUASYNC)	\
 	$(THRIFT)	\
+	$(JEDIS)	\
 	$(ZOOKEEPER)
 
 # Install all the .jar files in pkgdatadir.
