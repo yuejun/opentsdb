@@ -126,11 +126,8 @@ final class GraphHandler implements HttpRpc {
     }
   }
 
-  public Spans doThriftGet(final TSDB tsdb, QueryStr querystr) 
-  	throws IOException {
-  	
-  	Spans spans = new Spans();
-  	
+  public List<Spans> doThriftGet(final TSDB tsdb, QueryStr querystr) 
+  	throws IOException {  	  	
     final long start_time = querystr.starttime;
     final boolean nocache = querystr.nocache;
     if (start_time == -1) {
@@ -142,44 +139,59 @@ final class GraphHandler implements HttpRpc {
       end_time = now;
     }
     Query[] tsdbqueries;
+    List<Spans> Lspans = new ArrayList<Spans>();
     tsdbqueries = parseThriftQuery(tsdb, querystr.items);
+    for (final Query tsdbquery : tsdbqueries) {
+      try {
+        tsdbquery.setStartTime(start_time);
+      } catch (IllegalArgumentException e) {
+        throw new BadRequestException("start time: " + e.getMessage());
+      }
+      try {
+        tsdbquery.setEndTime(end_time);
+      } catch (IllegalArgumentException e) {
+        throw new BadRequestException("end time: " + e.getMessage());
+      }
+    }
 
     final int nqueries = tsdbqueries.length;
     @SuppressWarnings("unchecked")
-    final HashSet<String>[] aggregated_tags = new HashSet[nqueries];
     int npoints = 0;
     for (int i = 0; i < nqueries; i++) {
+    	Spans spans = new Spans();
       try { 
-      	Span span = new Span();
-        final DataPoints[] series = tsdbqueries[i].run();
-      	span.metric = series[0].metricName();
-        span.tags = series[0].getTags();
+      	
+      	System.out.println("--------------------quer is  " + tsdbqueries[i]);
+        final DataPoints[] series = tsdbqueries[i].run();    
+        System.out.println("-------------------series is  " + series);        
         for (final DataPoints datapoints : series) {
-
-          aggregated_tags[i] = new HashSet<String>();
-          aggregated_tags[i].addAll(datapoints.getAggregatedTags());
-          npoints += datapoints.aggregatedSize();
+        	Span span = new Span();
+        	System.out.println("--------------------datapoints is  " + datapoints);        	
+        	span.metric =datapoints.metricName();
+          span.tags = datapoints.getTags();
+          npoints += datapoints.aggregatedSize(); 
           int j = datapoints.size();
           Map<Long, Double> timevalue = new HashMap<Long, Double>();
-          
+          System.out.println(datapoints);
           for(DataPoint dp : datapoints) {
+          	System.out.println("--------------------dp is  " + dp);
           	if (dp.isInteger()) {
           		timevalue.put(dp.timestamp(), (double)dp.longValue());
             } else {
             	timevalue.put(dp.timestamp(), dp.doubleValue());
               }
           }
-          
-          
-          
           List<Map<Long, Double>> timevalues = new ArrayList<Map<Long,Double>>();
           timevalues.add(timevalue);
           span.timevalue = timevalues;
-          System.out.println(spans);
           spans.addToSpan(span);
-          
+          span = null;
           System.out.println(spans);
         }
+	      Lspans.add(spans);
+
+        System.out.println(spans);
+	      
       } catch (RuntimeException e) {
         LOG.info(querystr.toString(), "Query failed (stack trace coming): "
                 + tsdbqueries[i]);
@@ -188,7 +200,7 @@ final class GraphHandler implements HttpRpc {
       tsdbqueries[i] = null;  // free()
     }
     tsdbqueries = null;  // free()
-    return spans;
+    return Lspans;
   }
   
   

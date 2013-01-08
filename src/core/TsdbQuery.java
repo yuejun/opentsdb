@@ -254,7 +254,8 @@ final class TsdbQuery implements Query {
     int nrows = 0;
     int hbase_time = 0;  // milliseconds.
     long starttime = System.nanoTime();
-    if(System.currentTimeMillis()/1000 - start_time >= 60*60) {
+    System.out.println("this is called!!");	 
+    if(System.currentTimeMillis()/1000 - start_time <= 60*60) {
 	    for (Tuple item : jedis.zrangeByScoreWithScores(metric, start_time, end_time)) {	    	
 	    	try {
 	    		hbase_time += (System.nanoTime() - starttime) / 1000000;
@@ -293,8 +294,8 @@ final class TsdbQuery implements Query {
 	        byte[] _tags = new byte[redis_value.length - valLen - qu.length];
 	        System.arraycopy(redis_value, valLen + qu.length, _tags, 0, redis_value.length - valLen - qu.length);
 
-          System.out.println("redis_value" + Arrays.toString(redis_value));	      
-          System.out.println("_tags " + Arrays.toString(_tags));	  
+          //System.out.println("redis_value" + Arrays.toString(redis_value));	      
+          //System.out.println("_tags " + Arrays.toString(_tags));	  
 	        if (tags.size() != 0) {
 	          // Generate a regexp for our tags.  Say we have 2 tags: { 0 0 1 0 0 2 }
 	          // and { 4 5 6 9 8 7 }, the regexp will be:
@@ -303,12 +304,12 @@ final class TsdbQuery implements Query {
 	              * tags.size()));
 	          // In order to avoid re-allocations, reserve a bit more w/ groups ^^^
 	          // Allright, let's build this regexp.  From the beginning...
-	          System.out.println(tags);
+	          //System.out.println(tags);
 	          final Iterator<byte[]> tags = this.tags.iterator();
 	          byte[] tag = tags.hasNext() ? tags.next() : null;	          
 	          String t = Arrays.toString(tag);
 	          buf.append("^");
-	          System.out.println("t is " + t);
+	         // System.out.println("t is " + t);
 	          while (tag != null) {
 	            // Tags and group_bys are already sorted.  We need to put them in the
 	            // regexp in order by ID, which means we just merge two sorted lists.
@@ -321,14 +322,14 @@ final class TsdbQuery implements Query {
             }
 	          buf.append("(?:(.*, ){6})*");
 	          buf.append("$");
-	          System.out.println("----buf is "+buf.toString());
+	          //System.out.println("----buf is "+buf.toString());
 	          Pattern pattern = Pattern.compile(buf.toString());
 	          String ______tags = Arrays.toString(_tags);
 	          StringBuilder ___tags = new StringBuilder(______tags.substring(1, ______tags.length()-1));
 	          ___tags.append(", ");
-	          System.out.println("----1111"+___tags);
+	          //System.out.println("----1111"+___tags);
             result = pattern.matcher(___tags).matches();
-            System.out.println("result is "+result);
+            //System.out.println("result is "+result);
           }
 					
 	        
@@ -358,12 +359,12 @@ final class TsdbQuery implements Query {
 		        
 	          byte[] key1 = new byte[metric_width + 4 + redis_value.length
 	              - valLen - qu.length];
-	          System.out.println(redis_value.length);
+	          //System.out.println(redis_value.length);
 	          System.arraycopy(metric, 0, key1, 0, metric_width);
 	          Bytes.setInt(key1, (int) base_time, 3);
 	          System.arraycopy(redis_value, qu.length + valLen, key1,
 	              metric_width + 4, redis_value.length - valLen - qu.length);
-	          System.out.println(redis_value.length - valLen - qu.length);
+	          //System.out.println(redis_value.length - valLen - qu.length);
 	          Span datapoints = new Span(tsdb);
 	          byte[] fa = new byte[1];
 	          fa = "t".getBytes();
@@ -374,7 +375,7 @@ final class TsdbQuery implements Query {
 	          spans.put(key1, datapoints);
 	          nrows++;
 	          starttime = System.nanoTime();
-	          System.out.println("after, data is " + spans);
+	          //System.out.println("after, data is " + spans);
           }
         } catch (RuntimeException e) {
   		    throw e;
@@ -407,23 +408,23 @@ final class TsdbQuery implements Query {
 			    		System.out.println("null, data is " + datapoints);
 				    }
 				    
-				    System.out.println("null, data is " + datapoints);
+				    //System.out.println("null, data is " + datapoints);
 				    KeyValue da = tsdb.compact(row);
 				    
-				    System.out.println("da is " + da);
-				    System.out.println("da.fa len  is " + da.family().length);
-				    System.out.println("da.qu len  is " + da.qualifier().length);
-				    System.out.println("da.va len  is " + da.value().length);
-				    System.out.println("da.ke len  is " + da.key().length);
-				    System.out.println("da.fa  is " + Arrays.toString(da.family()));
-				    System.out.println("da.qu   is " + Bytes.getShort(da.qualifier()));
+				    //System.out.println("da is " + da);
+				    //System.out.println("da.fa len  is " + da.family().length);
+				    //System.out.println("da.qu len  is " + da.qualifier().length);
+				    //System.out.println("da.va len  is " + da.value().length);
+				    //System.out.println("da.ke len  is " + da.key().length);
+				    //System.out.println("da.fa  is " + Arrays.toString(da.family()));
+				    //System.out.println("da.qu   is " + Bytes.getShort(da.qualifier()));
 
-				    System.out.println("da.qu   is " + Arrays.toString(da.qualifier()));
-				    System.out.println("da.va  is " + Arrays.toString(da.value()));
-				    System.out.println("da.ke  is " + Arrays.toString(da.key()));
+				    //System.out.println("da.qu   is " + Arrays.toString(da.qualifier()));
+				    //System.out.println("da.va  is " + Arrays.toString(da.value()));
+				    //System.out.println("da.ke  is " + Arrays.toString(da.key()));
 				    datapoints.addRow(da);
 
-		    		System.out.println("after, spans is " + spans);
+		    		//System.out.println("after, spans is " + spans);
 		    		
 				    nrows++;
 				    starttime = System.nanoTime();

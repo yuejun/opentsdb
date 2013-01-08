@@ -145,30 +145,29 @@ public class TSDBThriftServer {
     @Override
     public List<Spans> Get(QueryStr querystr)
     throws org.apache.thrift.TException {
-    	List<Spans> Lspans = new ArrayList<Spans>();
         
       get_metrics.incrementAndGet();
         
       try {
       	GraphHandler gh = new GraphHandler();
-	      Spans spans = gh.doThriftGet(tsdb, querystr);
-	      Lspans.add(spans);
+      	List<Spans> Lspans = gh.doThriftGet(tsdb, querystr);
+      	if (Lspans.get(0) == null) {
+  	      System.out.println("error");
+  	      System.out.println("is null");
+  	      return null;
+        } else {
+        	System.out.println("is null");
+  	      System.out.println("Eerror");
+  			}
+        return Lspans;
       } catch (Exception e) {
       	LOG.error("error while serving " + querystr + "querystr: " + e.getMessage());
       	LOG.error("trace " + e.fillInStackTrace());
       	e.printStackTrace();
+      	return null;
       }
 
-      System.out.println("siz");
-      if (Lspans.get(0) == null) {
-	      System.out.println("error");
-	      System.out.println("is null");
-	      return null;
-      } else {
-      	System.out.println("is null");
-	      System.out.println("Eerror");
-			}
-      return Lspans;
+      
       
     }
   }
