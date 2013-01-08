@@ -118,11 +118,6 @@ final class IncomingDataPoints implements WritableDataPoints {
     final short tag_name_width = tsdb.tag_names.width();
     final short tag_value_width = tsdb.tag_values.width();
     final short num_tags = (short) tags.size();
-    System.out.println("metric = " + metric_width);
-    System.out.println("tag_name = " + tag_name_width);
-    System.out.println("tag_value = " + tag_value_width);
-    System.out.println("num_tags= " + num_tags);
-    
     int row_size = (metric_width + Const.TIMESTAMP_BYTES
                     + tag_name_width * num_tags
                     + tag_value_width * num_tags);

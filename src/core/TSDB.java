@@ -319,7 +319,7 @@ public final class TSDB {
                                             Bytes.fromShort(qualifier), value);
     // TODO(tsuna): Add a callback to time the latency of HBase and store the
     // timing in a moving Histogram (once we have a class for this).
-    System.out.println(sendToRedis(row, timestamp, value, qualifier));    
+    //System.out.println(sendToRedis(row, timestamp, value, qualifier));    
     return client.put(point);    
   }  
 
@@ -341,8 +341,8 @@ public final class TSDB {
 	  //						and tags(each tag* 3bytes)
 	  jedis.zadd(_sort_name, _score, _value);
 	  
-	  System.out.println("_value " + Arrays.toString(_value));
-	  System.out.println("sort_name " + Arrays.toString(_sort_name));
+	  //System.out.println("_value " + Arrays.toString(_value));
+	  //System.out.println("sort_name " + Arrays.toString(_sort_name));
 	  return null;
   }
 
@@ -474,9 +474,9 @@ public final class TSDB {
   /** Gets the entire given row from the data table. */
   final Deferred<ArrayList<KeyValue>> get(final byte[] key) {
     Deferred<ArrayList<KeyValue>> mu;
-    System.out.println("key is " + key);    
+    //System.out.println("key is " + key);    
     mu=  client.get(new GetRequest(table, key));
-    System.out.println("agjfhgasdjfghasd" + mu.toString());
+    //System.out.println("agjfhgasdjfghasd" + mu.toString());
     return mu;
   }
 
