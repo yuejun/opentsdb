@@ -636,9 +636,7 @@ public final class UniqueId implements UniqueIdInterface {
   }
 
   private static byte[] toBytes(final String s) {
-  	System.out.println("======" + s);
-  	System.out.println("byt======" + Arrays.toString(s.getBytes(CHARSET)));
-    return s.getBytes(CHARSET);
+  	return s.getBytes(CHARSET);
   }
 
   private static String fromBytes(final byte[] b) {

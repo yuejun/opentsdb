@@ -159,22 +159,18 @@ final class GraphHandler implements HttpRpc {
     int npoints = 0;
     for (int i = 0; i < nqueries; i++) {
     	Spans spans = new Spans();
-      try { 
-      	
-      	System.out.println("--------------------quer is  " + tsdbqueries[i]);
-        final DataPoints[] series = tsdbqueries[i].run();    
-        System.out.println("-------------------series is  " + series);        
+      try {
+        final DataPoints[] series = tsdbqueries[i].run();      
         for (final DataPoints datapoints : series) {
-        	Span span = new Span();
-        	System.out.println("--------------------datapoints is  " + datapoints);        	
+        	Span span = new Span();        	
         	span.metric =datapoints.metricName();
           span.tags = datapoints.getTags();
           npoints += datapoints.aggregatedSize(); 
           int j = datapoints.size();
           Map<Long, Double> timevalue = new HashMap<Long, Double>();
-          System.out.println(datapoints);
+          //System.out.println(datapoints);
           for(DataPoint dp : datapoints) {
-          	System.out.println("--------------------dp is  " + dp);
+          	//System.out.println("--------------------dp is  " + dp);
           	if (dp.isInteger()) {
           		timevalue.put(dp.timestamp(), (double)dp.longValue());
             } else {
@@ -186,11 +182,11 @@ final class GraphHandler implements HttpRpc {
           span.timevalue = timevalues;
           spans.addToSpan(span);
           span = null;
-          System.out.println(spans);
+          //System.out.println(spans);
         }
 	      Lspans.add(spans);
 
-        System.out.println(spans);
+        //System.out.println(spans);
 	      
       } catch (RuntimeException e) {
         LOG.info(querystr.toString(), "Query failed (stack trace coming): "

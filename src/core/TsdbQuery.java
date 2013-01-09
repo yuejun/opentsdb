@@ -232,7 +232,6 @@ final class TsdbQuery implements Query {
 
   public DataPoints[] run() throws HBaseException {
     DataPoints[] dt =  groupByAndAggregate(findSpans());
-    System.out.println("danteng is " + dt);
     return dt;
   }
 
@@ -253,8 +252,7 @@ final class TsdbQuery implements Query {
       new TreeMap<byte[], Span>(new SpanCmp(metric_width));
     int nrows = 0;
     int hbase_time = 0;  // milliseconds.
-    long starttime = System.nanoTime();
-    System.out.println("this is called!!");	 
+    long starttime = System.nanoTime(); 
     if(System.currentTimeMillis()/1000 - start_time <= 60*60) {
 	    for (Tuple item : jedis.zrangeByScoreWithScores(metric, start_time, end_time)) {	    	
 	    	try {
@@ -404,8 +402,6 @@ final class TsdbQuery implements Query {
 				    if (datapoints == null) {
 					    datapoints = new Span(tsdb);
 					    spans.put(key, datapoints);
-
-			    		System.out.println("null, data is " + datapoints);
 				    }
 				    
 				    //System.out.println("null, data is " + datapoints);
@@ -606,7 +602,6 @@ final class TsdbQuery implements Query {
         15  // "^.{N}" + "(?:.{M})*" + "$"
         + ((13 + tagsize) // "(?:.{M})*\\Q" + tagsize bytes + "\\E"
            * (tags.size() + (group_bys == null ? 0 : group_bys.size() * 3))));
-    System.out.println(buf);
     // In order to avoid re-allocations, reserve a bit more w/ groups ^^^
 
     // Alright, let's build this regexp.  From the beginning...
