@@ -56,7 +56,7 @@ public class TSDBService {
      * 
      * @param querystr
      */
-    public List<Spans> Get(QueryStr querystr) throws org.apache.thrift.TException;
+    public Result Get(QueryStr querystr) throws org.apache.thrift.TException;
 
   }
 
@@ -111,7 +111,7 @@ public class TSDBService {
       throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "Put failed: unknown result");
     }
 
-    public List<Spans> Get(QueryStr querystr) throws org.apache.thrift.TException
+    public Result Get(QueryStr querystr) throws org.apache.thrift.TException
     {
       send_Get(querystr);
       return recv_Get();
@@ -124,7 +124,7 @@ public class TSDBService {
       sendBase("Get", args);
     }
 
-    public List<Spans> recv_Get() throws org.apache.thrift.TException
+    public Result recv_Get() throws org.apache.thrift.TException
     {
       Get_result result = new Get_result();
       receiveBase(result, "Get");
@@ -206,7 +206,7 @@ public class TSDBService {
         prot.writeMessageEnd();
       }
 
-      public List<Spans> getResult() throws org.apache.thrift.TException {
+      public Result getResult() throws org.apache.thrift.TException {
         if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -577,14 +577,14 @@ public class TSDBService {
             case 1: // METRICS
               if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
                 {
-                  org.apache.thrift.protocol.TList _list64 = iprot.readListBegin();
-                  struct.metrics = new ArrayList<Metric>(_list64.size);
-                  for (int _i65 = 0; _i65 < _list64.size; ++_i65)
+                  org.apache.thrift.protocol.TList _list72 = iprot.readListBegin();
+                  struct.metrics = new ArrayList<Metric>(_list72.size);
+                  for (int _i73 = 0; _i73 < _list72.size; ++_i73)
                   {
-                    Metric _elem66; // required
-                    _elem66 = new Metric();
-                    _elem66.read(iprot);
-                    struct.metrics.add(_elem66);
+                    Metric _elem74; // required
+                    _elem74 = new Metric();
+                    _elem74.read(iprot);
+                    struct.metrics.add(_elem74);
                   }
                   iprot.readListEnd();
                 }
@@ -612,9 +612,9 @@ public class TSDBService {
           oprot.writeFieldBegin(METRICS_FIELD_DESC);
           {
             oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.metrics.size()));
-            for (Metric _iter67 : struct.metrics)
+            for (Metric _iter75 : struct.metrics)
             {
-              _iter67.write(oprot);
+              _iter75.write(oprot);
             }
             oprot.writeListEnd();
           }
@@ -645,9 +645,9 @@ public class TSDBService {
         if (struct.isSetMetrics()) {
           {
             oprot.writeI32(struct.metrics.size());
-            for (Metric _iter68 : struct.metrics)
+            for (Metric _iter76 : struct.metrics)
             {
-              _iter68.write(oprot);
+              _iter76.write(oprot);
             }
           }
         }
@@ -659,14 +659,14 @@ public class TSDBService {
         BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
           {
-            org.apache.thrift.protocol.TList _list69 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-            struct.metrics = new ArrayList<Metric>(_list69.size);
-            for (int _i70 = 0; _i70 < _list69.size; ++_i70)
+            org.apache.thrift.protocol.TList _list77 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+            struct.metrics = new ArrayList<Metric>(_list77.size);
+            for (int _i78 = 0; _i78 < _list77.size; ++_i78)
             {
-              Metric _elem71; // required
-              _elem71 = new Metric();
-              _elem71.read(iprot);
-              struct.metrics.add(_elem71);
+              Metric _elem79; // required
+              _elem79 = new Metric();
+              _elem79.read(iprot);
+              struct.metrics.add(_elem79);
             }
           }
           struct.setMetricsIsSet(true);
@@ -1384,7 +1384,7 @@ public class TSDBService {
   public static class Get_result implements org.apache.thrift.TBase<Get_result, Get_result._Fields>, java.io.Serializable, Cloneable   {
     private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("Get_result");
 
-    private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.LIST, (short)0);
+    private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.STRUCT, (short)0);
 
     private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
     static {
@@ -1392,7 +1392,7 @@ public class TSDBService {
       schemes.put(TupleScheme.class, new Get_resultTupleSchemeFactory());
     }
 
-    public List<Spans> success; // required
+    public Result success; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -1457,8 +1457,7 @@ public class TSDBService {
     static {
       Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
-              new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Spans.class))));
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Result.class)));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
       org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Get_result.class, metaDataMap);
     }
@@ -1467,7 +1466,7 @@ public class TSDBService {
     }
 
     public Get_result(
-      List<Spans> success)
+      Result success)
     {
       this();
       this.success = success;
@@ -1478,11 +1477,7 @@ public class TSDBService {
      */
     public Get_result(Get_result other) {
       if (other.isSetSuccess()) {
-        List<Spans> __this__success = new ArrayList<Spans>();
-        for (Spans other_element : other.success) {
-          __this__success.add(new Spans(other_element));
-        }
-        this.success = __this__success;
+        this.success = new Result(other.success);
       }
     }
 
@@ -1495,26 +1490,11 @@ public class TSDBService {
       this.success = null;
     }
 
-    public int getSuccessSize() {
-      return (this.success == null) ? 0 : this.success.size();
-    }
-
-    public java.util.Iterator<Spans> getSuccessIterator() {
-      return (this.success == null) ? null : this.success.iterator();
-    }
-
-    public void addToSuccess(Spans elem) {
-      if (this.success == null) {
-        this.success = new ArrayList<Spans>();
-      }
-      this.success.add(elem);
-    }
-
-    public List<Spans> getSuccess() {
+    public Result getSuccess() {
       return this.success;
     }
 
-    public Get_result setSuccess(List<Spans> success) {
+    public Get_result setSuccess(Result success) {
       this.success = success;
       return this;
     }
@@ -1540,7 +1520,7 @@ public class TSDBService {
         if (value == null) {
           unsetSuccess();
         } else {
-          setSuccess((List<Spans>)value);
+          setSuccess((Result)value);
         }
         break;
 
@@ -1687,19 +1667,9 @@ public class TSDBService {
           }
           switch (schemeField.id) {
             case 0: // SUCCESS
-              if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
-                {
-                  org.apache.thrift.protocol.TList _list72 = iprot.readListBegin();
-                  struct.success = new ArrayList<Spans>(_list72.size);
-                  for (int _i73 = 0; _i73 < _list72.size; ++_i73)
-                  {
-                    Spans _elem74; // required
-                    _elem74 = new Spans();
-                    _elem74.read(iprot);
-                    struct.success.add(_elem74);
-                  }
-                  iprot.readListEnd();
-                }
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.success = new Result();
+                struct.success.read(iprot);
                 struct.setSuccessIsSet(true);
               } else { 
                 org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
@@ -1722,14 +1692,7 @@ public class TSDBService {
         oprot.writeStructBegin(STRUCT_DESC);
         if (struct.success != null) {
           oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
-          {
-            oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.success.size()));
-            for (Spans _iter75 : struct.success)
-            {
-              _iter75.write(oprot);
-            }
-            oprot.writeListEnd();
-          }
+          struct.success.write(oprot);
           oprot.writeFieldEnd();
         }
         oprot.writeFieldStop();
@@ -1755,13 +1718,7 @@ public class TSDBService {
         }
         oprot.writeBitSet(optionals, 1);
         if (struct.isSetSuccess()) {
-          {
-            oprot.writeI32(struct.success.size());
-            for (Spans _iter76 : struct.success)
-            {
-              _iter76.write(oprot);
-            }
-          }
+          struct.success.write(oprot);
         }
       }
 
@@ -1770,17 +1727,8 @@ public class TSDBService {
         TTupleProtocol iprot = (TTupleProtocol) prot;
         BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
-          {
-            org.apache.thrift.protocol.TList _list77 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-            struct.success = new ArrayList<Spans>(_list77.size);
-            for (int _i78 = 0; _i78 < _list77.size; ++_i78)
-            {
-              Spans _elem79; // required
-              _elem79 = new Spans();
-              _elem79.read(iprot);
-              struct.success.add(_elem79);
-            }
-          }
+          struct.success = new Result();
+          struct.success.read(iprot);
           struct.setSuccessIsSet(true);
         }
       }

@@ -20,18 +20,15 @@ struct Metric {
 }
 
 /*
+ * aggregator & downsample_agg:
+ *   0: sum, 1: min, 2: max, 3: avg, 4: dev
+ * rate:
+ *   0: no rate, 1: rate
+ * cache:
+ *   0: no cache, 1: cache
+ */
 
-aggregator & downsample_agg:
-  0: sum, 1: min, 2: max, 3: avg, 4: dev
-rate:
-  0: note rate, 1: rate
-nocache:
-  0: cache, 1: nocache
-  
-*/
-
-
-struct Items {
+struct Item {
     1: string metric
     4: map<string, string> tags
     5: byte aggregator
@@ -40,11 +37,10 @@ struct Items {
     8: bool rate
 } 
 
-
 struct QueryStr {
     1: i64 starttime
     2: i64 endtime
-    3: list<Items> items
+    3: list<Item> items
     4: bool nocache
 } 
 
@@ -54,10 +50,14 @@ struct Span {
     3: list<map<i64, double>> timevalue
 }
 
-struct Spans {
-    1: list<Span> span
+struct SpanGroup {
+    1: list<Span> spans
 }
 
+struct Result {
+    1: string info
+    2: list<SpanGroup> spangroups
+}
 
 
 service TSDBService {
@@ -82,6 +82,6 @@ service TSDBService {
      * 
      * 
      */
-    list<Spans> Get(1: QueryStr querystr)
+    Result Get(1: QueryStr querystr)
 }
 

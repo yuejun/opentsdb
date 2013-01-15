@@ -17,12 +17,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import java_cup.internal_error;
-
 import com.stumbleupon.async.Deferred;
-
-import org.hamcrest.core.Is;
 import org.hbase.async.Bytes;
 import org.hbase.async.PutRequest;
 

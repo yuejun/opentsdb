@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 
+import org.apache.log4j.PropertyConfigurator;
 import org.hbase.async.HBaseClient;
 
 import net.opentsdb.BuildData;
@@ -77,6 +78,7 @@ final class TSDMain {
   }
 
   public static void main(String[] args) {
+  	PropertyConfigurator.configure("/home/yuejun/git/opentsdb/build/log4j.properties");
     Logger log = LoggerFactory.getLogger(TSDMain.class);
     log.info("Starting.");
     log.info(BuildData.revisionString());

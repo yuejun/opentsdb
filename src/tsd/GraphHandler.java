@@ -126,7 +126,7 @@ final class GraphHandler implements HttpRpc {
     }
   }
 
-  public List<Spans> doThriftGet(final TSDB tsdb, QueryStr querystr) 
+  public List<SpanGroup> doThriftGet(final TSDB tsdb, QueryStr querystr) 
   	throws IOException {  	  	
     final long start_time = querystr.starttime;
     final boolean nocache = querystr.nocache;
@@ -139,7 +139,7 @@ final class GraphHandler implements HttpRpc {
       end_time = now;
     }
     Query[] tsdbqueries;
-    List<Spans> Lspans = new ArrayList<Spans>();
+    List<SpanGroup> Lspans = new ArrayList<SpanGroup>();
     tsdbqueries = parseThriftQuery(tsdb, querystr.items);
     for (final Query tsdbquery : tsdbqueries) {
       try {
@@ -158,7 +158,7 @@ final class GraphHandler implements HttpRpc {
     @SuppressWarnings("unchecked")
     int npoints = 0;
     for (int i = 0; i < nqueries; i++) {
-    	Spans spans = new Spans();
+    	SpanGroup spans = new SpanGroup();
       try {
         final DataPoints[] series = tsdbqueries[i].run();      
         for (final DataPoints datapoints : series) {
@@ -180,7 +180,7 @@ final class GraphHandler implements HttpRpc {
           List<Map<Long, Double>> timevalues = new ArrayList<Map<Long,Double>>();
           timevalues.add(timevalue);
           span.timevalue = timevalues;
-          spans.addToSpan(span);
+          spans.addToSpans(span);
           span = null;
           //System.out.println(spans);
         }
@@ -957,13 +957,13 @@ final class GraphHandler implements HttpRpc {
     return tsdbqueries;
   }
 
-  private static Query[] parseThriftQuery(final TSDB tsdb, final List<Items> items) {
+  private static Query[] parseThriftQuery(final TSDB tsdb, final List<Item> items) {
   	if (items == null) {
       throw BadRequestException.missingParameter("items");
     }
     final Query[] tsdbqueries = new Query[items.size()];
     int nqueries = 0;
-    for (final Items item : items) {
+    for (final Item item : items) {
       // m is of the following forms:
       //   agg:[interval-agg:][rate:]metric[{tag=value,...}]
       // Where the parts in square brackets `[' .. `]' are optional.

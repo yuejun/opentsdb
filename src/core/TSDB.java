@@ -16,10 +16,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import java_cup.internal_error;
-
-import com.google.gwt.i18n.client.LocalizableResource.Key;
 import com.stumbleupon.async.Callback;
 import com.stumbleupon.async.Deferred;
 import com.stumbleupon.async.DeferredGroupException;
@@ -33,10 +29,7 @@ import org.hbase.async.DeleteRequest;
 import org.hbase.async.GetRequest;
 import org.hbase.async.HBaseClient;
 import org.hbase.async.HBaseException;
-import org.hbase.async.HBaseRpc;
 import org.hbase.async.KeyValue;
-import org.hbase.async.NonRecoverableException;
-import org.hbase.async.NotServingRegionException;
 import org.hbase.async.PutRequest;
 
 import net.opentsdb.uid.UniqueId;

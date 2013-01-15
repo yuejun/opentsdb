@@ -435,7 +435,7 @@ final class TsdbQuery implements Query {
 		    scanlatency.add(hbase_time);
 	    }
     }
-		LOG.info(this + " matched " + nrows + " rows in " + spans.size() + " spans");
+		LOG.debug(this + " matched " + nrows + " rows in " + spans.size() + " spans");
     if (nrows == 0) {
       return null;
     }

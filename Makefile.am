@@ -71,6 +71,11 @@ tsdb_SRC := \
 	src/tsd/StaticFileRpc.java	\
 	src/tsd/TelnetRpc.java	\
 	src/tsd/WordSplitter.java	\
+	src/tsd/Item.java   \
+  src/tsd/QueryStr.java   \
+  src/tsd/Span.java   \
+  src/tsd/SpanGroup.java  \
+  src/tsd/Result.java \
 	src/tsd/Metric.java	\
 	src/tsd/TSDBService.java	\
 	src/tsd/TSDBThriftServer.java	\

@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.opentsdb.core.TSDB;
 import net.opentsdb.stats.StatsCollector;
+import net.opentsdb.tsd.Result;
 
 
 /**
@@ -104,22 +105,35 @@ public class TSDBThriftServer {
         	}
 
     @Override
-    public List<Spans> Get(QueryStr querystr)
+    public Result Get(QueryStr querystr)
     	throws org.apache.thrift.TException {       
-        get_metrics.incrementAndGet();        
+        get_metrics.incrementAndGet();
+        Result result = new Result();
         try {
         	GraphHandler gh = new GraphHandler();
-        	List<Spans> Lspans = gh.doThriftGet(tsdb, querystr);
-        	if (Lspans.get(0) == null) {
-    	      return null;
-          } 
-          return Lspans;
+        	List<SpanGroup> spans = gh.doThriftGet(tsdb, querystr);
+  	      result.spangroups = spans;
+  	      
+  	      System.out.println(spans);
+  	      
+        	if (spans.get(0) == null) {
+    	      result.info = "0";
+    	      return result;
+          }         	
+        	//result.info = result.spangroups.size();
+          return result;
           } catch (Exception e) {
-          	LOG.error("error while serving " + querystr + "querystr: " + e.getMessage());
-          	LOG.error("trace " + e.fillInStackTrace());
-          	e.printStackTrace();
-          	return null;
+          	LOG.debug("error while serving " + "querystr: " + querystr);
+          	//LOG.error("trace " + e.fillInStackTrace());
+          	LOG.error(e.getMessage());
+          	//e.printStackTrace();
+          	result.info = e.getMessage();
+          	return result;
           	}
+        finally {
+
+        	
+        }
         }
     }
 
