@@ -20,7 +20,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,10 +28,6 @@ import org.hbase.async.Bytes;
 import org.hbase.async.HBaseException;
 import org.hbase.async.KeyValue;
 import org.hbase.async.Scanner;
-
-
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Tuple;
 import static org.hbase.async.Bytes.ByteMap;
 
 import net.opentsdb.stats.Histogram;
@@ -44,7 +39,7 @@ import net.opentsdb.uid.NoSuchUniqueName;
  */
 final class TsdbQuery implements Query {
 	
-	private Jedis jedis = new Jedis("127.0.0.1", 6379);
+	//private Jedis jedis = new Jedis("127.0.0.1", 6379);
 
   private static final Logger LOG = LoggerFactory.getLogger(TsdbQuery.class);
 
@@ -253,8 +248,8 @@ final class TsdbQuery implements Query {
     int nrows = 0;
     int hbase_time = 0;  // milliseconds.
     long starttime = System.nanoTime(); 
-    if(System.currentTimeMillis()/1000 - start_time <= 60*60) {
-	    for (Tuple item : jedis.zrangeByScoreWithScores(metric, start_time, end_time)) {	    	
+    if(System.currentTimeMillis()/1000 - start_time <= 1) {
+/*	    for (Tuple item : jedis.zrangeByScoreWithScores(metric, start_time, end_time)) {	    	
 	    	try {
 	    		hbase_time += (System.nanoTime() - starttime) / 1000000;
 	        final long time = (long)item.getScore();
@@ -332,7 +327,7 @@ final class TsdbQuery implements Query {
 					
 	        
 	        
-	        /*// got tags
+	        // got tags
 	        
 	        
 	        int num = 0;
@@ -349,7 +344,7 @@ final class TsdbQuery implements Query {
 							
 							
 						}
-					}*/
+					}
 	        
 	        
 	        
@@ -383,7 +378,7 @@ final class TsdbQuery implements Query {
   		    hbase_time += (System.nanoTime() - starttime) / 1000000;
   		    RedisScanlatency.add(hbase_time);
   	    }
-	    }
+	    }*/
     } else {
     	final Scanner scanner = getScanner();
 	    try {

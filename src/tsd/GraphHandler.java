@@ -167,18 +167,22 @@ final class GraphHandler implements HttpRpc {
           span.tags = datapoints.getTags();
           npoints += datapoints.aggregatedSize(); 
           int j = datapoints.size();
-          Map<Long, Double> timevalue = new HashMap<Long, Double>();
+          List<Map<Long, Double>> timevalues = new ArrayList<Map<Long,Double>>();
           //System.out.println(datapoints);
           for(DataPoint dp : datapoints) {
           	//System.out.println("--------------------dp is  " + dp);
           	if (dp.isInteger()) {
+              Map<Long, Double> timevalue = new HashMap<Long, Double>();
           		timevalue.put(dp.timestamp(), (double)dp.longValue());
+              timevalues.add(timevalue);
+              timevalue = null;
             } else {
+              Map<Long, Double> timevalue = new HashMap<Long, Double>();
             	timevalue.put(dp.timestamp(), dp.doubleValue());
+              timevalues.add(timevalue);
+              timevalue = null;
               }
           }
-          List<Map<Long, Double>> timevalues = new ArrayList<Map<Long,Double>>();
-          timevalues.add(timevalue);
           span.timevalue = timevalues;
           spans.addToSpans(span);
           span = null;
