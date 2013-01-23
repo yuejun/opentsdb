@@ -74,7 +74,7 @@ public class TSDBThriftServer {
     public boolean Put(List<Metric> metrics)
         throws org.apache.thrift.TException {
       LOG.info("Put..." + metrics.size());
-      // if (metrics.size() <= 10)
+      if (metrics.size() == 0) return true;
       // LOG.info("size of number is single-digits, may be misused in metric " +
       // metrics.get(0).tags.toString());
       puts_requests.getAndAdd(metrics.size());

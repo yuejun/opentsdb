@@ -226,8 +226,7 @@ final class TsdbQuery implements Query {
   }
 
   public DataPoints[] run() throws HBaseException {
-    DataPoints[] dt =  groupByAndAggregate(findSpans());
-    return dt;
+    return groupByAndAggregate(findSpans());
   }
 
   /**
@@ -274,12 +273,11 @@ final class TsdbQuery implements Query {
 	        System.arraycopy(redis_value, 0, qu, 0, 2);	    	
 	        // got value
 	        byte[] value = new byte[valLen];
-	        System.arraycopy(redis_value, qu.length, value, 0, valLen);	    	
+	        System.arraycopy(redis_value, qu.length, value, 0, valLen);    	
 	        
 	         // judge if the tags are match
 	        
-	        boolean result = true;
-	        
+	        boolean result = true;	        
 		       
 	        final short name_width = tsdb.tag_names.width();
 	        final short value_width = tsdb.tag_values.width();
@@ -323,12 +321,9 @@ final class TsdbQuery implements Query {
 	          //System.out.println("----1111"+___tags);
             result = pattern.matcher(___tags).matches();
             //System.out.println("result is "+result);
-          }
-					
+          }        
 	        
-	        
-	        // got tags
-	        
+	        // got tags        
 	        
 	        int num = 0;
 	        for (int j = 0; j < tags.size(); j++) {
@@ -340,16 +335,11 @@ final class TsdbQuery implements Query {
 							if(_tags.equals(toBeMatched)) {
 								num ++;
 								break;
-							}
-							
-							
+							}							
 						}
 					}
 	        
-	        
-	        
-					if (result) {		        
-		        
+					if (result) {
 	          byte[] key1 = new byte[metric_width + 4 + redis_value.length
 	              - valLen - qu.length];
 	          //System.out.println(redis_value.length);
@@ -398,25 +388,8 @@ final class TsdbQuery implements Query {
 					    datapoints = new Span(tsdb);
 					    spans.put(key, datapoints);
 				    }
-				    
-				    //System.out.println("null, data is " + datapoints);
 				    KeyValue da = tsdb.compact(row);
-				    
-				    //System.out.println("da is " + da);
-				    //System.out.println("da.fa len  is " + da.family().length);
-				    //System.out.println("da.qu len  is " + da.qualifier().length);
-				    //System.out.println("da.va len  is " + da.value().length);
-				    //System.out.println("da.ke len  is " + da.key().length);
-				    //System.out.println("da.fa  is " + Arrays.toString(da.family()));
-				    //System.out.println("da.qu   is " + Bytes.getShort(da.qualifier()));
-
-				    //System.out.println("da.qu   is " + Arrays.toString(da.qualifier()));
-				    //System.out.println("da.va  is " + Arrays.toString(da.value()));
-				    //System.out.println("da.ke  is " + Arrays.toString(da.key()));
 				    datapoints.addRow(da);
-
-		    		//System.out.println("after, spans is " + spans);
-		    		
 				    nrows++;
 				    starttime = System.nanoTime();
 			    }

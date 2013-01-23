@@ -755,10 +755,10 @@ final class GraphHandler implements HttpRpc {
       params.put("format x", stringify(value));
     }
     if ((value = popParam(querystring, "ylog")) != null) {
-      params.put("logscale", "y");
+      params.put("logscale y", "");
     }
     if ((value = popParam(querystring, "y2log")) != null) {
-      params.put("logscale", "y2");
+      params.put("logscale y2", "");
     }
     if ((value = popParam(querystring, "key")) != null) {
       params.put("key", value);
@@ -771,6 +771,9 @@ final class GraphHandler implements HttpRpc {
     }
     if ((value = popParam(querystring, "fgcolor")) != null) {
       params.put("fgcolor", value);
+    }
+    if ((value = popParam(querystring, "smooth")) != null) {
+      params.put("smooth", value);
     }
     // This must remain after the previous `if' in order to properly override
     // any previous `key' parameter if a `nokey' parameter is given.
