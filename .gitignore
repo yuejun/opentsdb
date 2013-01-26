@@ -4,9 +4,11 @@ Makefile.in
 aclocal.m4
 autom4te.cache
 build
+target
 config.log
 config.status
 configure
+<<<<<<< HEAD
 tags
 /build-aux
 /lib
@@ -27,3 +29,6 @@ tags
 /.classpath
 /.gitignore
 /.project
+=======
+pom.xml
+>>>>>>> refs/remotes/github/master
